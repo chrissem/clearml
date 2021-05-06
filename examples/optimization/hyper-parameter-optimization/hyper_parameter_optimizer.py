@@ -53,7 +53,7 @@ if not args['template_task_id']:
 
 # Set default queue name for the Training tasks themselves.
 # later can be overridden in the UI
-execution_queue = '1xGPU'
+execution_queue = 'default'
 
 # Example use case:
 an_optimizer = HyperParameterOptimizer(
