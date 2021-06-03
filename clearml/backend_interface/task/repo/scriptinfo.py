@@ -27,6 +27,7 @@ class ScriptInfoError(Exception):
 class ScriptRequirements(object):
     _max_requirements_size = 512 * 1024
     _packages_remove_version = ('setuptools', )
+    _ignore_packages = set()
 
     def __init__(self, root_folder):
         self._root_folder = root_folder
@@ -81,7 +82,7 @@ class ScriptRequirements(object):
 
         # if we have torch and it supports tensorboard, we should add that as well
         # (because it will not be detected automatically)
-        if 'torch' in modules and 'tensorboard' not in modules:
+        if 'torch' in modules and 'tensorboard' not in modules and 'tensorboardX' not in modules:
             # noinspection PyBroadException
             try:
                 # see if this version of torch support tensorboard
@@ -148,13 +149,17 @@ class ScriptRequirements(object):
             conda_requirements = ''
 
         # add forced requirements:
+        forced_packages = {}
+        ignored_packages = ScriptRequirements._ignore_packages
         # noinspection PyBroadException
         try:
             from ..task import Task
             # noinspection PyProtectedMember
             forced_packages = copy(Task._force_requirements)
+            # noinspection PyProtectedMember
+            ignored_packages = Task._ignore_requirements | ignored_packages
         except Exception:
-            forced_packages = {}
+            pass
 
         # python version header
         requirements_txt = '# Python ' + sys.version.replace('\n', ' ').replace('\r', ' ') + '\n'
@@ -170,6 +175,8 @@ class ScriptRequirements(object):
         # requirement summary
         requirements_txt += '\n'
         for k, v in reqs.sorted_items():
+            if k in ignored_packages or k.lower() in ignored_packages:
+                continue
             version = v.version
             if k in forced_packages:
                 forced_version = forced_packages.pop(k, None)
@@ -846,18 +853,25 @@ class ScriptInfo(object):
 
             if cls.is_running_from_module():
                 argvs = ''
-                git_root = os.path.abspath(script_dict['repo_root']) if script_dict['repo_root'] else None
+                git_root = os.path.abspath(str(script_dict['repo_root'])) if script_dict['repo_root'] else None
                 for a in sys.argv[1:]:
                     if git_root and os.path.exists(a):
                         # check if common to project:
                         a_abs = os.path.abspath(a)
                         if os.path.commonpath([a_abs, git_root]) == git_root:
                             # adjust path relative to working dir inside git repo
-                            a = ' ' + os.path.relpath(a_abs, os.path.join(git_root, script_dict['working_dir']))
+                            a = ' ' + os.path.relpath(
+                                a_abs, os.path.join(git_root, str(script_dict['working_dir'])))
                     argvs += ' {}'.format(a)
+
+                # noinspection PyBroadException
+                try:
+                    module_name = vars(sys.modules['__main__'])['__spec__'].name
+                except Exception:
+                    module_name = vars(sys.modules['__main__'])['__package__']
+
                 # update the script entry point to match the real argv and module call
-                script_dict['entry_point'] = '-m {}{}'.format(
-                    vars(sys.modules['__main__'])['__package__'], (' ' + argvs) if argvs else '')
+                script_dict['entry_point'] = '-m {}{}'.format(module_name, (' ' + argvs) if argvs else '')
         except Exception:
             pass
         return script_dict
