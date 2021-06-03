@@ -8,14 +8,6 @@ from clearml import Task
 from torchvision.datasets.mnist import MNIST
 from torchvision import transforms
 
-resources = [
-  ("https://github.com/chrissem/datasets/releases/download/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
-  ("https://github.com/chrissem/datasets/releases/download/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
-  ("https://github.com/chrissem/datasets/releases/download/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
-  ("https://github.com/chrissem/datasets/releases/download/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
-]
-
-MNIST.resources = resources
 
 class LitClassifier(pl.LightningModule):
     def __init__(self, hidden_dim=128, learning_rate=1e-3):
@@ -77,6 +69,22 @@ if __name__ == '__main__':
     # ------------
     # data
     # ------------
+
+    if hasattr(MNIST, 'mirrors'):
+        mirrors = [
+            'https://github.com/chrissem/datasets/releases/download/mnist/'
+            'https://ossci-datasets.s3.amazonaws.com/mnist/',
+        ]
+        MNIST.mirrors = mirrors
+
+    elif hasattr(MNIST, 'resources'):
+        resources = [
+          ("https://github.com/chrissem/datasets/releases/download/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
+          ("https://github.com/chrissem/datasets/releases/download/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
+          ("https://github.com/chrissem/datasets/releases/download/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
+          ("https://github.com/chrissem/datasets/releases/download/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
+        ]
+        MNIST.resources = resources
 
     dataset = MNIST('', train=True, download=True, transform=transforms.ToTensor())
     mnist_test = MNIST('', train=False, download=True, transform=transforms.ToTensor())
