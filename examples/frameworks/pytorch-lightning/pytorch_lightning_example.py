@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
     if hasattr(MNIST, 'mirrors'):
         mirrors = [
-            'https://github.com/chrissem/datasets/releases/download/mnist/'
-            'https://ossci-datasets.s3.amazonaws.com/mnist/',
+            'https://github.com/chrissem/datasets/releases/download/mnist/',
+            'https://ossci-datasets.s3.amazonaws.com/mnist/'
         ]
         MNIST.mirrors = mirrors
 
